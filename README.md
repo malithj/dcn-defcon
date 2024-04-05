@@ -2,8 +2,10 @@
 * Python package for GPU texture memory based inference for Deformable Convolutions
 
 ## Docker build
+```
 docker build -t dcn:v0.1 .
 docker run -it --gpus=all dcn:v0.1
+```
 
 ## Install python dependencies in virtual environment
 ```
