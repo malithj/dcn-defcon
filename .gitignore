@@ -1,0 +1,14 @@
+googletest
+build
+.vscode/*
+*workspace
+*whl
+*so
+*__pycache__*
+*egg-info
+googletest.diff
+*_venv*
+*data/coco/*
+*results
+yolact_edge/weights/*
+venv/*
