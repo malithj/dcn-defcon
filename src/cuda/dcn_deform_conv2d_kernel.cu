@@ -1,6 +1,6 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
-#include <THC/THC.h>
+//#include <THC/THC.h>
 #include <cuda_fp16.h>
 
 #include <THC/THCAtomics.cuh>
@@ -110,6 +110,12 @@ __global__ void deformable_im2col_kernel(
         const int mask_idx = i * weight_w + j;
         const int offset_idx = 2 * mask_idx;
 
+        // float mask_value = 1;
+        // if (use_mask) {
+        //   mask_value =
+        //       mask_ptr[mask_idx * (out_h * out_w) + out_y * out_w + out_x];
+        // }
+
         const float offset_h =
             offset_ptr[offset_idx * (out_h * out_w) + out_y * out_w + out_x];
         const float offset_w = offset_ptr[(offset_idx + 1) * (out_h * out_w) +
@@ -160,6 +166,12 @@ __global__ void tex_deformable_im2col_kernel(
       for (int j = 0; j < weight_w; ++j) {
         const int mask_idx = i * weight_w + j;
         const int offset_idx = 2 * mask_idx;
+
+        // float mask_value = 1;
+        // if (use_mask) {
+        //   mask_value =
+        //       mask_ptr[mask_idx * (out_h * out_w) + out_y * out_w + out_x];
+        // }
 
         const float offset_h =
             offset_ptr[offset_idx * (out_h * out_w) + out_y * out_w + out_x];

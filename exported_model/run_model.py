@@ -1,7 +1,7 @@
 import argparse
-import torch
-import torchprof
 import numpy as np
+import torch
+#import torchprof
 import pandas as pd
 
 import DConv
@@ -107,7 +107,7 @@ def parse_args():
     return args
 
 
-def extract_compute(trace, torch_prof_events_list, layer_idx):
+def extract_compute(trace, layer_idx):
     paths = [trace[x].path for x in layer_idx]
     cuda_times = {}
     for path in paths:
@@ -131,20 +131,24 @@ def main():
         'exported_model/exported_weights/%s_dcn_%d.pt' % ('search_light' if args.net_mode == 'light' else args.net_mode, (idx + 1))))
     layer.cuda()
     if args.profile:
-        with torchprof.Profile(layer, use_cuda=True, profile_memory=True) as prof:
+        #with torchprof.Profile(layer, use_cuda=True, profile_memory=True) as prof:
+        with torch.profiler.profile(use_cuda=True,
+                                    profile_memory=True) as prof:
             for i in range(args.itr):
-                input = torch.rand(
+                input_ = torch.rand(
                     [1, layer_dims[idx][0], args.height, args.width]).cuda()
-                layer(input)
-        trace, event_lists_dict = prof.raw()
-        cuda_times = extract_compute(
-            trace, event_lists_dict, [2, 3, 4, 5, 6]) if args.net_mode == 'light' else extract_compute(trace, event_lists_dict, [1, 2])
+                layer(input_)
+        trace = prof.key_averages().table(sort_by='self_cuda_time_total')
+        # trace, event_lists_dict = prof.raw()
+        # cuda_times = extract_compute(
+        #    trace, event_lists_dict, [2, 3, 4, 5, 6]) if args.net_mode == 'light' else extract_compute(trace, event_lists_dict, [1, 2])
+        # cuda_times = extract_compute(trace, [2, 3, 4, 5, 6]) if args.net_mode == 'light' else extract_compute(trace, [1, 2])
         # print(prof.display(show_events=False))
-        store_dict = {'OPERATION': list(
-            cuda_times.keys()), 'TIME(ms)': np.asarray(list(cuda_times.values())) / args.itr}
-        df = pd.DataFrame.from_dict(store_dict)
-        df.to_csv('results/%s_runtimes.csv' % args.net_mode)
-        print(df)
+        # store_dict = {'OPERATION': list(
+        #     cuda_times.keys()), 'TIME(ms)': np.asarray(list(cuda_times.values())) / args.itr}
+        # df = pd.DataFrame.from_dict(store_dict)
+        # df.to_csv('results/%s_runtimes.csv' % args.net_mode)
+        # print(df)
     else:
         for i in range(args.itr):
             input = torch.rand(

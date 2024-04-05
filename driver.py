@@ -46,7 +46,7 @@ def main():
         in_width = layer[3]
         for m_idx, m in enumerate(modes):
             idx_ = (idx * len(modes)) + m_idx
-            template_command = "/usr/local/cuda/bin/nvprof --unified-memory-profiling off --log-file 'results/%s.csv' --csv python exported_model/run_model.py --mode %s --in_channels %s --out_channels %s --in_height %s --in_width %s --batch %s --itr %s --net_mode %s --layer %s"
+            template_command = "/usr/local/cuda/bin/nvprof --openacc-profiling off --unified-memory-profiling off --log-file 'results/%s.csv' --csv python exported_model/run_model.py --mode %s --in_channels %s --out_channels %s --in_height %s --in_width %s --batch %s --itr %s --net_mode %s --layer %s"
             command = template_command % (
                 'stats', m, c, f, in_height, in_width, b, prog_iterations, net_mode, layer_idx_lookup[idx])
             print("running command: ", command)

@@ -1,5 +1,4 @@
 #!/bin/bash
-source venv/bin/activate
 echo -e "compiling normal mode"
 rm -rf build
 rm -rf dcn_ext.cpython* 

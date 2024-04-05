@@ -10,5 +10,6 @@ googletest.diff
 *_venv*
 *data/coco/*
 *results
+*output
 yolact_edge/weights/*
 venv/*

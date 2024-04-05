@@ -1,7 +1,7 @@
 import argparse
-import torch
-import torchprof
 import numpy as np
+import torch
+#import torchprof
 import pandas as pd
 
 import DConv
@@ -107,19 +107,13 @@ def parse_args():
     return args
 
 
-def extract_compute(trace, torch_prof_events_list, layer_idx):
-    paths = [trace[x].path for x in layer_idx]
-    cuda_times = {}
-    for path in paths:
-        cuda_time = 0
-        for x in torch_prof_events_list[path]:
-            cuda_time += x[0].cuda_time
-        cuda_time = cuda_time / 1000.0            # convert to milliseconds
-        if (path[0], path[1]) in cuda_times:
-            cuda_times['%s_%s' % (path[0], path[1])] += cuda_time
-        else:
-            cuda_times['%s_%s' % (path[0], path[1])] = cuda_time
+def extract_compute(trace):
+    cuda_times = dict()
+    for t in trace:
+        if t.key in ['DConv_conv1', 'DConv_conv2']:
+            cuda_times[t.key] = t.cpu_time_total
     return cuda_times
+    # print(trace["DConv_conv2"])
 
 
 def main():
@@ -135,22 +129,32 @@ def main():
         for net_mode in ['light', 'original_full', 'bounded']:
         # for net_mode in ['original_full']:
             for mode in ['torch', 'ours']:
-                layers, layer_dims = parse_layers(mode, net_mode)
-                layer = layers[idx]
-                layer.load_state_dict(torch.load(
-                    'exported_model/exported_weights/%s_dcn_%d.pt' % ('search_light' if net_mode == 'light' else net_mode, (idx + 1))))
-                layer.cuda()
+                #layers, layer_dims = parse_layers(mode, net_mode)
+                #layer = layers[idx]
+                #layer.load_state_dict(torch.load(
+                #    'exported_model/exported_weights/%s_dcn_%d.pt' % ('search_light' if net_mode == 'light' else net_mode, (idx + 1))))
+                #layer.cuda()
                 in_height = image_sizes[idx][0]
                 in_width = image_sizes[idx][1]
-                with torchprof.Profile(layer, use_cuda=True, profile_memory=True) as prof:
+                with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU,
+                                                        torch.profiler.ProfilerActivity.CUDA], 
+                                            profile_memory=True) as prof:
+                    layers, layer_dims = parse_layers(mode, net_mode)
+                    layer = layers[idx]
+                    layer.load_state_dict(torch.load(
+                        'exported_model/exported_weights/%s_dcn_%d.pt' % ('search_light' if net_mode == 'light' else net_mode, (idx + 1))))
+                    layer.cuda()
                     for i in range(itr):
                         input = torch.rand(
                             [1, layer_dims[idx][0], in_height, in_width]).cuda()
                         layer(input)
-                trace, event_lists_dict = prof.raw()
-                cuda_times = extract_compute(
-                    trace, event_lists_dict, [2, 3, 4, 5, 6]) if net_mode == 'light' else extract_compute(trace, event_lists_dict, [1, 2])
+                # trace, event_lists_dict = prof.raw()
+                trace = prof.key_averages().table(sort_by='self_cuda_time_total')
+                events = prof.key_averages()
+                # cuda_times = extract_compute(
+                #    trace, event_lists_dict, [2, 3, 4, 5, 6]) if net_mode == 'light' else extract_compute(trace, event_lists_dict, [1, 2])
                 # print(prof.display(show_events=False))
+                cuda_times = extract_compute(events)
                 store_dict = {'OPERATION': list(
                     cuda_times.keys()), 'TIME(ms)': np.asarray(list(cuda_times.values())) / args.itr}
                 df = pd.DataFrame.from_dict(store_dict)
@@ -171,7 +175,7 @@ def main():
                     global_df = df
                     initial = False
                 else:
-                    global_df = global_df.append(df)
+                    global_df = pd.concat([global_df, df]) #global_df.append(df)
     global_df.to_csv('results/original_layer_runtimes.csv', index=False)
 
 

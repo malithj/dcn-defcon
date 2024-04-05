@@ -30,7 +30,7 @@ def main():
         in_height = layer[2]
         in_width = layer[3]
         for m_idx, m in enumerate(modes):
-            template_command = "/usr/local/cuda/bin/nvprof --unified-memory-profiling off --log-file 'results/%s.csv' --csv --metrics %s python exported_model/run_model.py --mode %s --in_channels %s --out_channels %s --in_height %s --in_width %s --batch %s --itr %s --net_mode %s --layer %s"
+            template_command = "/usr/local/cuda/bin/nvprof --openacc-profiling off --unified-memory-profiling off --log-file 'results/%s.csv' --csv --metrics %s python exported_model/run_model.py --mode %s --in_channels %s --out_channels %s --in_height %s --in_width %s --batch %s --itr %s --net_mode %s --layer %s"
             command = template_command % (
                 'stats_%s_%s' % (str(c), m), flags, m, c, f, in_height, in_width, b, prog_iterations, net_mode, layer_idx_lookup[lidx])
             print("running command: ", command)
@@ -72,7 +72,8 @@ def main():
                 global_df = df
                 run = True
             else:
-                global_df = global_df.append(df)
+                #global_df = global_df.append(df)
+                global_df = pd.concat([global_df, df]) 
     global_df.to_csv('results/profiled_deformable_run_times_%s.csv' %
                      (time.time()), index=False)
 

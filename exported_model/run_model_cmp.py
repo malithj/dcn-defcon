@@ -10,12 +10,13 @@ import DConv
 import DConv2
 
 """
+PACT Rebuttal:
 Interval Search vs SOA Comparison
 """
 
 
 def parse_layers(mode, technique='is'):
-    df = pd.read_csv('exported_model/exported_weights/reb_compare.csv')
+    df = pd.read_csv('exported_model/exported_weights/rebuttal_compare.csv')
     layers = []
     layer_dims = []
     for index, row in df.iterrows():
@@ -159,7 +160,7 @@ def main():
                 else:
                     global_df = global_df.append(df)
     print(global_df)
-    global_df.to_csv('results/is_base_cmp_network.csv')
+    global_df.to_csv('results/pact_22_rebuttal_cmp_network.csv')
 
 
 if __name__ == '__main__':
